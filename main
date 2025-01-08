@@ -1,65 +1,55 @@
-from fastapi import FastAPI, status
-from database import Base, engine, ToDo
-from pydantic import BaseModel
+from fastapi import FastAPI, Body, Depends
+import schemas
+import models
+
+from database import Base, engine, SessionLocal
 from sqlalchemy.orm import Session
 
-# Create ToDoRequest Base Model
-class ToDoRequest(BaseModel):
-    task: str
-# Create the database
 Base.metadata.create_all(engine)
 
-# Initialize app
 app = FastAPI()
 
+fakeDatabase = {
+    1:{'task': 'Clean car'},
+    2:{'task': 'Write blog'},
+    3:{'task': 'Start stream'},
+}
+
 @app.get("/")
-def root():
-    return "todooo"
+def getItems():
+    return fakeDatabase
 
-@app.post("/todo", status_code=status.HTTP_201_CREATED)
-def create_todo(todo: ToDoRequest):
+@app.get("/{id}")
+def getItem(id:int):
+    return fakeDatabase[id]
 
-    #create a new database sesh
-    session = Session(bind=engine, expire_on_commit=False)
+#option 1
+#@app.post("/")
+#def addItem(task:str):
+#    newId = len(fakeDatabase.keys()) + 1
+#   fakeDatabase[newId] = {"task":item.task}
+#    return fakeDatabase
 
-    #create instance of the ToDo databasemodel
-    tododb = ToDo(task = todo.task)
+#option 2
+@app.post("/")
+def addItem(item:schemas.Item):
+    newId = len(fakeDatabase.keys()) + 1
+    fakeDatabase[newId] = {"task":item.task}
+    return fakeDatabase
 
-    #add it to the sesh and commit it
-    session.add(tododb)
-    session.commit()
+#option 3
+#@app.post("/")
+#def addItem(body = Body()):
+    newId = len(fakeDatabase.keys()) + 1
+    fakeDatabase[newId] = {"task":body['task']}
+    return fakeDatabase
 
-    #grab the id given to the object from db
-    id = tododb.id
+@app.put("/{id}")
+def updateItem(id:int, item:schemas.Item):
+    fakeDatabase[id]['task'] = item.task
+    return fakeDatabase
 
-    #close sesshion
-    session.close()
-
-    # insert todo as a new record in the database
-    return f"created todo item with id {id}"
-
-@app.get("/todo/{id}")
-def read_todo(id: int):
-
-    #create a new db sesh
-    session = Session(bind=engine, expire_on_commit=False)
-
-    #get the todo item with given ID
-    todo = session.query(ToDo).get(id)
-
-    #close session
-    session.close()
-
-    return f"todo item with id: {todo.id} and task: {todo.task}"
-
-@app.put("/todo/{id}")
-def update_todo(id: int):
-    return "update todo item with id {id}"
-
-@app.delete("/todo/{id}")
-def delete_todo(id: int):
-    return "delete todo item with id {id}"
-
-@app.get("/todo")
-def read_todo_list():
-    return "read todo list"
+@app.delete("/{id}")
+def deleteItem(id:int):
+    del fakeDatabase[id]
+    return fakeDatabase
