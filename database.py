@@ -1,14 +1,10 @@
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-# Create a sqlite engine instance
-engine = create_engine("sqlite:///todooo.db")
-
-# Create a DeclarativeMeta instance
+#create database engine
+engine = create_engine('sqlte:///todo.db')
+#create declarative base meta engine insanece
 Base = declarative_base()
-
-# Define To Do class inheriting from Base
-class ToDo(Base):
-    __tablename__ = 'todos'
-    id = Column(Integer, primary_key=True)
-    task = Column(String(256))
+#Create session local class for session maker
+SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
